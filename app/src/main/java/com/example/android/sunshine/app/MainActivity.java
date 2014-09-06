@@ -17,6 +17,9 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        Log.e(LOG_TAG, "onCreate");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
@@ -26,6 +29,31 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    @Override
+    protected void onStart() {
+        Log.e(LOG_TAG, "onStart");
+        super.onStart();
+    }
+    @Override
+    protected void onResume() {
+        Log.e(LOG_TAG, "onResume");
+        super.onResume();
+    }
+    @Override
+    protected void onPause() {
+        Log.e(LOG_TAG, "onPause");
+        super.onPause();
+    }
+    @Override
+    protected void onStop() {
+        Log.e(LOG_TAG, "onStop");
+        super.onStop();
+    }
+    @Override
+    protected void onDestroy() {
+        Log.e(LOG_TAG, "onDestroy");
+        super.onDestroy();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -72,7 +100,7 @@ public class MainActivity extends ActionBarActivity {
         if (intent.resolveActivity(getPackageManager()) != null){
             startActivity(intent);
         } else {
-            Log.d(LOG_TAG, "Couldn't call " + location + ", no receiving apps installed");
+            Log.e(LOG_TAG, "Couldn't call " + location + ", no receiving apps installed");
         }
     }
 }
