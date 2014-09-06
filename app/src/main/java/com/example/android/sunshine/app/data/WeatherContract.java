@@ -7,7 +7,7 @@ import android.provider.BaseColumns;
  */
 public class WeatherContract {
 
-    public static final class WeatherEntry implements BaseColumns{
+    public static final class WeatherEntry implements BaseColumns {
 
         public static final String TABLE_NAME = "weather";
 
@@ -23,7 +23,7 @@ public class WeatherContract {
         public static final String COLUMN_DEGRESS    = "degress";
     }
 
-    public static final class LocationEntry implements BaseColumns{
+    public static final class LocationEntry implements BaseColumns {
 
         public static final String TABLE_NAME = "location";
 
