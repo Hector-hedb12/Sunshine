@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by hector on 12/09/14.
+ * Created by hector on 12/09/14
  */
 public class TestProvider extends AndroidTestCase {
 
