@@ -1,14 +1,16 @@
 package com.example.android.sunshine.app.test;
 
+import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.test.AndroidTestCase;
 import android.util.Log;
 
 import com.example.android.sunshine.app.data.WeatherContract;
-import com.example.android.sunshine.app.data.WeatherContract.WeatherEntry;
 import com.example.android.sunshine.app.data.WeatherContract.LocationEntry;
+import com.example.android.sunshine.app.data.WeatherContract.WeatherEntry;
 import com.example.android.sunshine.app.data.WeatherDbHelper;
 
 import java.util.Map;
@@ -25,23 +27,22 @@ public class TestProvider extends AndroidTestCase {
         mContext.deleteDatabase(WeatherDbHelper.DATABASE_NAME);
     }
 
-    public void testInsertReadDb(){
+    public void testInsertReadProvider(){
 
         WeatherDbHelper dbHelper = new WeatherDbHelper(mContext);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        ContentValues testValues = createNorthPoleLocationValues();
+        ContentValues testValues = createLocationValues();
 
         long locationRowId;
-        locationRowId = db.insert(WeatherContract.LocationEntry.TABLE_NAME, null, testValues);
+        locationRowId = db.insert(LocationEntry.TABLE_NAME, null, testValues);
 
         assertTrue(locationRowId != -1);
         Log.d(LOG_TAG, "New row id: " + locationRowId);
 
-        Cursor cursor = db.query(
-                WeatherContract.LocationEntry.TABLE_NAME, // tabla
-                null,
-                null,
+        // location
+        Cursor cursor = mContext.getContentResolver().query(
+                LocationEntry.CONTENT_URI,
                 null,
                 null,
                 null,
@@ -50,17 +51,65 @@ public class TestProvider extends AndroidTestCase {
 
         validateCursor(cursor, testValues);
 
+        // location_id
+        cursor = mContext.getContentResolver().query(
+                LocationEntry.buildLocationUri(locationRowId),
+                null,
+                null,
+                null,
+                null
+        );
+
+        validateCursor(cursor, testValues);
+
+
         // Segundo test:
         ContentValues weatherValues = createWeatherValues(locationRowId);
 
-        long weatherRowId = db.insert(WeatherContract.WeatherEntry.TABLE_NAME, null, weatherValues);
+        long weatherRowId = db.insert(WeatherEntry.TABLE_NAME, null, weatherValues);
 
         assertTrue(weatherRowId != -1);
 
-        Cursor weatherCursor = db.query(
-                WeatherContract.WeatherEntry.TABLE_NAME,
-                null, // leaving "columns" null just returns all the columns.
+        Cursor weatherCursor = mContext.getContentResolver().query(
+                WeatherEntry.CONTENT_URI,
                 null,
+                null,
+                null,
+                null
+        );
+
+        validateCursor(weatherCursor, weatherValues);
+
+        // agrega los valores de testValues (localizacion) a weatherValues (clima)
+        // Esto asegura que el validador del cursor compare todos las columnas
+        // incluyendo las de localizacion producto del JOIN
+        addAllContentValues(weatherValues, testValues);
+
+        // Solo localizacion
+        weatherCursor = mContext.getContentResolver().query(
+                WeatherEntry.buildWeatherLocation(TEST_LOCATION),
+                null,
+                null,
+                null,
+                null
+        );
+
+        validateCursor(weatherCursor, weatherValues);
+
+        // localizacion + fecha inicial
+        weatherCursor = mContext.getContentResolver().query(
+                WeatherEntry.buildWeatherLocationWithStartDate(TEST_LOCATION, TEST_DATE),
+                null,
+                null,
+                null,
+                null
+        );
+
+        validateCursor(weatherCursor, weatherValues);
+
+        // localizacion + dia
+        weatherCursor = mContext.getContentResolver().query(
+                WeatherEntry.buildWeatherLocationWithDate(TEST_LOCATION, TEST_DATE),
                 null,
                 null,
                 null,
@@ -108,7 +157,7 @@ public class TestProvider extends AndroidTestCase {
         ContentValues weatherValues = new ContentValues();
 
         weatherValues.put(WeatherContract.WeatherEntry.COLUMN_LOC_KEY, locationRowId);
-        weatherValues.put(WeatherContract.WeatherEntry.COLUMN_DATETEXT, "20141205");
+        weatherValues.put(WeatherContract.WeatherEntry.COLUMN_DATETEXT, TEST_DATE);
         weatherValues.put(WeatherContract.WeatherEntry.COLUMN_DEGREES, 1.1);
         weatherValues.put(WeatherContract.WeatherEntry.COLUMN_HUMIDITY, 1.2);
         weatherValues.put(WeatherContract.WeatherEntry.COLUMN_PRESSURE, 1.3);
@@ -121,11 +170,15 @@ public class TestProvider extends AndroidTestCase {
         return weatherValues;
     }
 
-    static ContentValues createNorthPoleLocationValues() {
+    static public String TEST_CITY_NAME = "North Pole";
+    static public String TEST_LOCATION = "99705";
+    static public String TEST_DATE = "20141205";
+
+    static ContentValues createLocationValues() {
 
         ContentValues values = new ContentValues();
-        values.put(WeatherContract.LocationEntry.COLUMN_CITY_NAME, "North Pole");
-        values.put(WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING, "99705");
+        values.put(WeatherContract.LocationEntry.COLUMN_CITY_NAME, TEST_CITY_NAME);
+        values.put(WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING, TEST_LOCATION);
         values.put(WeatherContract.LocationEntry.COLUMN_COORD_LAT, 64.772);
         values.put(WeatherContract.LocationEntry.COLUMN_COORD_LONG, -147.355);
 
@@ -148,4 +201,13 @@ public class TestProvider extends AndroidTestCase {
 
         valueCursor.close();
     }
+
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    void addAllContentValues(ContentValues destination, ContentValues source){
+        for (String key : source.keySet()){
+            destination.put(key,source.getAsString(key));
+        }
+    }
+
 }
