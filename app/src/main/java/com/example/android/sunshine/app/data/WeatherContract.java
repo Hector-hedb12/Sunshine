@@ -4,6 +4,9 @@ import android.content.ContentUris;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by hector on 06/09/14.
  */
@@ -15,6 +18,8 @@ public class WeatherContract {
 
     public static final String PATH_WEATHER = "weather";
     public static final String PATH_LOCATION = "location";
+
+    public static final String DATE_FORMAT = "yyyyMMdd";
 
     public static final class WeatherEntry implements BaseColumns {
 
@@ -95,5 +100,10 @@ public class WeatherContract {
         public static Uri buildLocationUri(long id){
             return ContentUris.withAppendedId(CONTENT_URI, id);
         }
+    }
+
+    public static String getDbDateString(Date date){
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+        return sdf.format(date);
     }
 }
