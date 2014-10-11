@@ -1,6 +1,5 @@
 package com.example.android.sunshine.app;
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -53,6 +52,12 @@ public class ForecastFragment extends Fragment implements LoaderCallbacks<Cursor
 
     private ForecastAdapter mForecastAdapter;
 
+    // allow activities to be notified of item selections
+    public interface Callback {
+        // used when a item has been selected
+        public void onItemSelected(String date);
+    }
+
     public ForecastFragment() {
     }
 
@@ -93,10 +98,7 @@ public class ForecastFragment extends Fragment implements LoaderCallbacks<Cursor
                 Cursor cursor = mForecastAdapter.getCursor();
 
                 if ( cursor != null && cursor.moveToPosition(position) ) {
-                    Intent mIntent = new Intent(getActivity(),DetailActivity.class)
-                            .putExtra(DetailActivity.DATE_KEY, cursor.getString(COL_WEATHER_DATE));
-
-                    startActivity(mIntent);
+                    ((Callback) getActivity()).onItemSelected(cursor.getString(COL_WEATHER_DATE));
                 }
             }
         });

@@ -11,7 +11,6 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.ShareActionProvider;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,6 +37,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private ShareActionProvider mShareActionProvider;
     private String mLocation;
     private String mForecast;
+    private String mDateStr;
 
     private static final int DETAIL_LOADER = 0;
 
@@ -79,7 +79,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onResume() {
         super.onResume();
-        if ( mLocation != null && !Utility.getPreferredLocation(getActivity()).equals(mLocation) ) {
+
+        Bundle arguments = getArguments();
+
+        if ( mLocation != null && arguments != null && arguments.containsKey(DetailActivity.DATE_KEY) &&
+                !Utility.getPreferredLocation(getActivity()).equals(mLocation) ) {
             getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
         }
     }
@@ -87,6 +91,16 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
+        Bundle arguments = getArguments();
+        if ( arguments != null ){
+            mDateStr = arguments.getString(DetailActivity.DATE_KEY);
+        }
+
+        if ( savedInstanceState != null ) {
+            mLocation = savedInstanceState.getString(LOCATION_KEY);
+        }
+
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
 
         mIconView = (ImageView) rootView.findViewById(R.id.detail_icon);
@@ -104,8 +118,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        Log.v(LOG_TAG, "in onCreateOptionsMenu");
-
         inflater.inflate(R.menu.detailfragment, menu);
         MenuItem menuItem = menu.findItem(R.id.action_share);
 
@@ -128,35 +140,27 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        getLoaderManager().initLoader(DETAIL_LOADER, null, this);
+        super.onActivityCreated(savedInstanceState);
 
         if ( savedInstanceState != null ) {
             // recover mLocation
             mLocation = savedInstanceState.getString(LOCATION_KEY);
         }
 
-        super.onActivityCreated(savedInstanceState);
+        Bundle arguments = getArguments();
+        if ( arguments != null && arguments.containsKey(DetailActivity.DATE_KEY) ) {
+            getLoaderManager().initLoader(DETAIL_LOADER, null, this);
+        }
     }
 
     @Override
-    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        Log.v(LOG_TAG, "in onCreateLoader");
-
-        Intent intent = getActivity().getIntent();
-
-        if (intent == null || !intent.hasExtra(DetailActivity.DATE_KEY) ) {
-            return null;
-        }
-
-        String forecastDate = intent.getStringExtra(DetailActivity.DATE_KEY);
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
         String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATETEXT + " ASC";
 
         mLocation = Utility.getPreferredLocation(getActivity());
 
-        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(mLocation, forecastDate);
-
-        Log.v(LOG_TAG, weatherForLocationUri.toString());
+        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(mLocation, mDateStr);
 
         return new CursorLoader(
                 getActivity(),
@@ -170,7 +174,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        Log.v(LOG_TAG, "in onLoadFinished");
 
         if ( data != null && data.moveToFirst() ) {
 
@@ -209,7 +212,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
             // for the share intent
             mForecast = String.format("%s - %s - %s / %s", dateText, description, high, low);
-            Log.v(LOG_TAG, "Forecast String: " + mForecast);
 
             // If onCreateOptionsMenu has already happened, we need to update the share intent now
             if ( mShareActionProvider != null ) {
